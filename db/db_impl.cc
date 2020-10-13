@@ -511,10 +511,7 @@ Status DBImpl::WriteLevel0Table(MemTable* mem, VersionEdit* edit,
   Status s;
   {
     mutex_.Unlock();
-//    s = BuildTable(dbname_, env_, options_, table_cache_, iter, &meta);
-    // replace original function with one including "counter" parameter
-    Iterator* iterMem = mem_->NewIterator();
-    s = BuildTable(dbname_, env_, options_, table_cache_, iter, &meta, map, iterMem);
+    s = BuildTable(dbname_, env_, options_, table_cache_, iter, &meta);
     mutex_.Lock();
   }
 
@@ -572,8 +569,6 @@ void DBImpl::CompactMemTable() {
     imm_ = nullptr;
     has_imm_.store(false, std::memory_order_release);
     RemoveObsoleteFiles();
-    // after one minor compaction, we clear the counter
-    map.clear();
   } else {
     RecordBackgroundError(s);
   }
@@ -1469,13 +1464,6 @@ void DBImpl::GetApproximateSizes(const Range* range, int n, uint64_t* sizes) {
 Status DB::Put(const WriteOptions& opt, const Slice& key, const Slice& value) {
   WriteBatch batch;
   batch.Put(key, value);
-  // update counter when put data
-  auto mapIter = map.find(key.ToString());
-  if (mapIter != map.end()){
-      map.insert({key.ToString(), mapIter->second + 1});
-  } else {
-      map.insert({key.ToString(), 0});
-  }
   return Write(opt, &batch);
 }
 

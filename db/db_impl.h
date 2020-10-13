@@ -9,7 +9,6 @@
 #include <deque>
 #include <set>
 #include <string>
-#include <map>
 
 #include "db/dbformat.h"
 #include "db/log_writer.h"

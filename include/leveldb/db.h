@@ -53,9 +53,6 @@ class LEVELDB_EXPORT DB {
   static Status Open(const Options& options, const std::string& name,
                      DB** dbptr);
 
-  // counter for differentiating cold and hot data
-  std::map<std::string, int> map;
-
   DB() = default;
 
   DB(const DB&) = delete;

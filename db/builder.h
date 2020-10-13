@@ -6,8 +6,6 @@
 #define STORAGE_LEVELDB_DB_BUILDER_H_
 
 #include "leveldb/status.h"
-#include "db_impl.h"
-#include <map>
 
 namespace leveldb {
 
@@ -26,8 +24,6 @@ class VersionEdit;
 // zero, and no Table file will be produced.
 Status BuildTable(const std::string& dbname, Env* env, const Options& options,
                   TableCache* table_cache, Iterator* iter, FileMetaData* meta);
-Status BuildTable(const std::string& dbname, Env* env, const Options& options,
-                  TableCache* table_cache, Iterator* iter, FileMetaData* meta, std::map<std::string, int> &counter, Iterator* iter2);
 
 }  // namespace leveldb
 
