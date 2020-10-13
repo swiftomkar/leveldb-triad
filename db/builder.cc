@@ -12,7 +12,10 @@
 #include "leveldb/env.h"
 #include "leveldb/iterator.h"
 
+
 namespace leveldb {
+// threshold for hot data
+const int HotThreshold = 5;
 
 Status BuildTable(const std::string& dbname, Env* env, const Options& options,
                   TableCache* table_cache, Iterator* iter, FileMetaData* meta) {
@@ -78,5 +81,92 @@ Status BuildTable(const std::string& dbname, Env* env, const Options& options,
   }
   return s;
 }
+
+
+// my buildtable
+Status BuildTable(const std::string& dbname, Env* env, const Options& options,
+                  TableCache* table_cache, Iterator* iter, FileMetaData* meta, std::map<Slice, int> &counter, Iterator* iter2) {
+        Status s;
+        meta->file_size = 0;
+        iter->SeekToFirst();
+
+        std::string fname = TableFileName(dbname, meta->number);
+        if (iter->Valid()) {
+            WritableFile* file;
+            s = env->NewWritableFile(fname, &file);
+            if (!s.ok()) {
+                return s;
+            }
+
+            TableBuilder* builder = new TableBuilder(options, file);
+            meta->smallest.DecodeFrom(iter->key());
+            Slice key;
+            std::map<Slice, int>::iterator mapIter; // locate key in counter map
+            for (; iter->Valid(); iter->Next()) {
+                key = iter->key();
+                // translate mem key to user key
+                InternalKey tmp;
+                tmp.DecodeFrom(key);
+                Slice userKey = tmp.user_key();
+                mapIter = counter.find(userKey.ToString());
+                if (mapIter != counter.end() && mapIter->second < HotThreshold){ // if cold data, add to table
+                    builder->Add(key, iter->value());
+                } else { // if hot data, move it to mem table
+                    // extract sequence number
+                    ParsedInternalKey result;
+                    ParseInternalKey(key, &result);
+                    LookupKey lkey(userKey, result.sequence);
+                    std::string value;
+                    Status status;
+                    iter2->SeekToFirst();
+                    iter2->Seek(key);
+                    if (result.type == kTypeDeletion || !iter2->Valid()){ // data is not so hot: the data is going to delete or not exist in memtable
+                        builder->Add(key, iter->value());
+                    } // else skip the real hot data
+                }
+            }
+            if (!key.empty()) {
+                meta->largest.DecodeFrom(key);
+            }
+
+            // Finish and check for builder errors
+            s = builder->Finish();
+            if (s.ok()) {
+                meta->file_size = builder->FileSize();
+                assert(meta->file_size > 0);
+            }
+            delete builder;
+
+            // Finish and check for file errors
+            if (s.ok()) {
+                s = file->Sync();
+            }
+            if (s.ok()) {
+                s = file->Close();
+            }
+            delete file;
+            file = nullptr;
+
+            if (s.ok()) {
+                // Verify that the table is usable
+                Iterator* it = table_cache->NewIterator(ReadOptions(), meta->number,
+                                                        meta->file_size);
+                s = it->status();
+                delete it;
+            }
+        }
+
+        // Check for input iterator errors
+        if (!iter->status().ok()) {
+            s = iter->status();
+        }
+
+        if (s.ok() && meta->file_size > 0) {
+            // Keep it
+        } else {
+            env->RemoveFile(fname);
+        }
+        return s;
+    }
 
 }  // namespace leveldb
