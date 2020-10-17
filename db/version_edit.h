@@ -21,7 +21,8 @@ struct FileMetaData {
                    allowed_seeks(1 << 30),
                    file_size(0),
                    //OMKAR
-                   hll(std::make_shared<HyperLogLog>(12)) {}
+                   hll_add_count(0),
+                   hll(std::make_shared<HyperLogLog>(12)){}
                    //OMKAR
 
   int refs;
@@ -32,6 +33,7 @@ struct FileMetaData {
   InternalKey largest;   // Largest internal key served by table
   //OMKAR
   std::shared_ptr<HyperLogLog> hll;
+  int hll_add_count;
   //TODO: Check back if UpdateBoundaries needs to be added
   //OMKAR
 };
