@@ -20,7 +20,9 @@ struct FileMetaData {
   FileMetaData() : refs(0),
                    allowed_seeks(1 << 30),
                    file_size(0),
+                   //OMKAR
                    hll(std::make_shared<HyperLogLog>(12)) {}
+                   //OMKAR
 
   int refs;
   int allowed_seeks;  // Seeks allowed until compaction
@@ -28,8 +30,10 @@ struct FileMetaData {
   uint64_t file_size;    // File size in bytes
   InternalKey smallest;  // Smallest internal key served by table
   InternalKey largest;   // Largest internal key served by table
+  //OMKAR
   std::shared_ptr<HyperLogLog> hll;
   //TODO: Check back if UpdateBoundaries needs to be added
+  //OMKAR
 };
 
 class VersionEdit {
