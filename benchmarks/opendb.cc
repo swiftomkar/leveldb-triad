@@ -12,8 +12,11 @@ int main(int argc, char* argv[]) {
   leveldb::Status s;
   for(int i = 0; i<400000;i++) {
     value = "value" + std::to_string(i);
-    key = std::to_string(i%100);
+    std::string ret_value;
+    key = std::to_string(i);
     s = db->Put(leveldb::WriteOptions(), key, value);
+    s = db->Put(leveldb::WriteOptions(), key, value+".v2");
+    s = db->Get(leveldb::ReadOptions(), key, &return_value);
     //std::cout << return_value << "\n";
   }
   leveldb::Iterator* db_iter = db->NewIterator(leveldb::ReadOptions());

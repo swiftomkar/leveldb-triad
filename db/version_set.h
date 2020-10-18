@@ -259,11 +259,6 @@ class VersionSet {
     return (v->compaction_score_ >= 1) || (v->file_to_compact_ != nullptr);
   }
 
-  bool compactionDiffered() const {
-    Version* v = current_;
-    return v->differedCompaction_;
-  }
-
   // Add all files listed in any live version to *live.
   // May also mutate some internal state.
   void AddLiveFiles(std::set<uint64_t>* live);
