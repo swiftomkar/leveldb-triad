@@ -531,7 +531,16 @@ Status DBImpl::WriteLevel0Table(MemTable* mem, VersionEdit* edit,
       level = base->PickLevelForMemTableOutput(min_user_key, max_user_key);
     }
     edit->AddFile(level, meta.number, meta.file_size, meta.smallest,
-                  meta.largest);
+                  //OMKAR
+                  meta.largest,
+                  meta.hll,
+                  meta.reclaim_ratio,
+                  meta.hll_add_count,
+                  meta.num_sst_next_level_overlap,
+                  meta.file_num_low,
+                  meta.file_num_high
+                  //OMKAR
+                  );
   }
 
   CompactionStats stats;
@@ -730,7 +739,16 @@ void DBImpl::BackgroundCompaction() {
     FileMetaData* f = c->input(0, 0);
     c->edit()->RemoveFile(c->level(), f->number);
     c->edit()->AddFile(c->level() + 1, f->number, f->file_size, f->smallest,
-                       f->largest);
+                       //OMKAR
+                       f->largest,
+                       f->hll,
+                       f->reclaim_ratio,
+                       f->hll_add_count,
+                       f->num_sst_next_level_overlap,
+                       f->file_num_low,
+                       f->file_num_high
+                       //OMKAR
+                       );
     status = versions_->LogAndApply(c->edit(), &mutex_);
     if (!status.ok()) {
       RecordBackgroundError(status);
@@ -878,8 +896,19 @@ Status DBImpl::InstallCompactionResults(CompactionState* compact) {
   const int level = compact->compaction->level();
   for (size_t i = 0; i < compact->outputs.size(); i++) {
     const CompactionState::Output& out = compact->outputs[i];
+    //OMKAR
+    FileMetaData* f = compact->compaction->input(0, 0);
+    //OMKAR
     compact->compaction->edit()->AddFile(level + 1, out.number, out.file_size,
-                                         out.smallest, out.largest);
+                                         out.smallest, out.largest,
+                                         //OMKAR
+                                         f->hll,
+                                         f->reclaim_ratio,
+                                         f->hll_add_count,
+                                         f->num_sst_next_level_overlap,
+                                         f->file_num_low,
+                                         f->file_num_high);
+                                         //OMKAR
   }
   return versions_->LogAndApply(compact->compaction->edit(), &mutex_);
 }
@@ -896,6 +925,9 @@ Status DBImpl::DoCompactionWork(CompactionState* compact) {
   assert(versions_->NumLevelFiles(compact->compaction->level()) > 0);
   assert(compact->builder == nullptr);
   assert(compact->outfile == nullptr);
+  //OMKAR
+
+  //OMKAR
   if (snapshots_.empty()) {
     compact->smallest_snapshot = versions_->LastSequence();
   } else {
