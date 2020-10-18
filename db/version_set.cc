@@ -1280,7 +1280,7 @@ Compaction* VersionSet::PickCompaction() {
       }
       int estimated = HyperLogLog::MergedEstimate(v);
       const double reclaim_ratio = 1 - estimated * 1.0 / total_keys;
-      std::cout << "estimated HLL " << estimated << " " << "reclaim ratio: " << reclaim_ratio << "\n";
+      //std::cout << "estimated HLL " << estimated << " " << "reclaim ratio: " << reclaim_ratio << "\n";
 
       if(reclaim_ratio < 0.4 && current_->files_[level].size() <= 6) {
         return nullptr;
