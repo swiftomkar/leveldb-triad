@@ -35,8 +35,9 @@ Status BuildTable(const std::string& dbname, Env* env, const Options& options,
       key = iter->key();
       builder->Add(key, iter->value());
       //OMKAR
-      meta->hll->AddHash(123);
-      ++meta->hll_add_count;
+      //meta->hll->AddHash(123);
+      //++meta->hll_add_count;
+      meta->updateFileMetaData(key);
       //OMKAR
     }
     if (!key.empty()) {
