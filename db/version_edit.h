@@ -11,6 +11,7 @@
 
 #include "db/dbformat.h"
 #include "util/hyperloglog.h"
+#include "util/murmurhash.h"
 
 namespace leveldb {
 
@@ -44,6 +45,12 @@ struct FileMetaData {
   uint64_t file_num_high;
   int num_sst_next_level_overlap;
   //TODO: Check back if UpdateBoundaries needs to be added
+  void updateFileMetaData(const Slice& key){
+    const Slice& user_key = ExtractUserKey(key);
+    int64_t hash = MurmurHash64A(user_key.data(), user_key.size(), 0);
+    hll->AddHash(hash);
+    ++hll_add_count;
+  }
   //OMKAR
 };
 

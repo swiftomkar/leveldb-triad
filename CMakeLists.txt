@@ -186,6 +186,8 @@ target_sources(leveldb
     "util/hyperloglog.h"
     "util/logging.cc"
     "util/logging.h"
+    "util/murmurhash.cc"
+    "util/murmurhash.h"
     "util/mutexlock.h"
     "util/no_destructor.h"
     "util/options.cc"
