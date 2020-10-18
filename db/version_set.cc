@@ -6,6 +6,7 @@
 
 #include <algorithm>
 #include <cstdio>
+#include <iostream>
 
 #include "db/filename.h"
 #include "db/log_reader.h"
@@ -1082,7 +1083,16 @@ Status VersionSet::WriteSnapshot(log::Writer* log) {
     const std::vector<FileMetaData*>& files = current_->files_[level];
     for (size_t i = 0; i < files.size(); i++) {
       const FileMetaData* f = files[i];
-      edit.AddFile(level, f->number, f->file_size, f->smallest, f->largest);
+      edit.AddFile(level, f->number, f->file_size, f->smallest, f->largest,
+                   //OMKAR
+                   f->hll,
+                   f->reclaim_ratio,
+                   f->hll_add_count,
+                   f->num_sst_next_level_overlap,
+                   f->file_num_low,
+                   f->file_num_high
+                   //OMKAR
+                   );
     }
   }
 
@@ -1270,6 +1280,7 @@ Compaction* VersionSet::PickCompaction() {
       }
       int estimated = HyperLogLog::MergedEstimate(v);
       const double reclaim_ratio = 1 - estimated * 1.0 / total_keys;
+      std::cout << "estimated HLL " << estimated << " " << "reclaim ratio: " << reclaim_ratio << "\n";
 
       if(reclaim_ratio < 0.4 && current_->files_[level].size() <= 6) {
         return nullptr;

@@ -10,7 +10,7 @@ int main(int argc, char* argv[]) {
   leveldb::Status status = leveldb::DB::Open(options, "/tmp/testdb", &db);
   std::string value, key, return_value;
   leveldb::Status s;
-  for(int i = 0; i<50;i++) {
+  for(int i = 0; i<500000;i++) {
     value = "value" + std::to_string(i);
     key = std::to_string(i);
     s = db->Put(leveldb::WriteOptions(), key, value);
@@ -18,7 +18,6 @@ int main(int argc, char* argv[]) {
   }
   leveldb::Iterator* db_iter = db->NewIterator(leveldb::ReadOptions());
   s=db->Get(leveldb::ReadOptions(), "4", &value);
-  std::cout << value;
   db_iter->SeekToFirst();
   while(db_iter->Valid()){
     leveldb::Slice value_ = db_iter->value();

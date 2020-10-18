@@ -369,7 +369,16 @@ class Repairer {
       // TODO(opt): separate out into multiple levels
       const TableInfo& t = tables_[i];
       edit_.AddFile(0, t.meta.number, t.meta.file_size, t.meta.smallest,
-                    t.meta.largest);
+                    //OMKAR
+                    t.meta.largest,
+                    t.meta.hll,
+                    t.meta.reclaim_ratio,
+                    t.meta.hll_add_count,
+                    t.meta.num_sst_next_level_overlap,
+                    t.meta.file_num_low,
+                    t.meta.file_num_high
+                    //OMKAR
+                    );
     }
 
     // std::fprintf(stderr,

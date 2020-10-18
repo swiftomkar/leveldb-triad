@@ -21,8 +21,12 @@ struct FileMetaData {
                    allowed_seeks(1 << 30),
                    file_size(0),
                    //OMKAR
+                   reclaim_ratio(0.0),
                    hll_add_count(0),
-                   hll(std::make_shared<HyperLogLog>(12)){}
+                   hll(std::make_shared<HyperLogLog>(12)),
+                   num_sst_next_level_overlap(-1),
+                   file_num_low(-1),//(ULLONG_MAX),
+                   file_num_high(-1){}
                    //OMKAR
 
   int refs;
@@ -34,6 +38,11 @@ struct FileMetaData {
   //OMKAR
   std::shared_ptr<HyperLogLog> hll;
   int hll_add_count;
+  double reclaim_ratio;
+  //Maybe useful stuff
+  uint64_t file_num_low;
+  uint64_t file_num_high;
+  int num_sst_next_level_overlap;
   //TODO: Check back if UpdateBoundaries needs to be added
   //OMKAR
 };
@@ -73,12 +82,33 @@ class VersionEdit {
   // REQUIRES: This version has not been saved (see VersionSet::SaveTo)
   // REQUIRES: "smallest" and "largest" are smallest and largest keys in file
   void AddFile(int level, uint64_t file, uint64_t file_size,
-               const InternalKey& smallest, const InternalKey& largest) {
+               const InternalKey& smallest, const InternalKey& largest,
+               //OMKAR
+               const std::shared_ptr<HyperLogLog>& hll,
+               double reclaim_ratio,
+               int hll_add_count,
+
+               int num_sst_next_level_overlap,
+               uint64_t file_num_low,
+               uint64_t file_num_high
+               //OMKAR
+               ) {
     FileMetaData f;
     f.number = file;
     f.file_size = file_size;
     f.smallest = smallest;
     f.largest = largest;
+
+    //OMKAR
+    f.hll = hll;
+    f.hll_add_count = hll_add_count;
+    f.reclaim_ratio = reclaim_ratio;
+
+    f.file_num_low = file_num_low;
+    f.file_num_high = file_num_high;
+    f.num_sst_next_level_overlap = num_sst_next_level_overlap;
+
+    //OMKAR
     new_files_.push_back(std::make_pair(level, f));
   }
 
