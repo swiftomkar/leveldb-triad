@@ -8,6 +8,7 @@
 #include <set>
 #include <utility>
 #include <vector>
+#include <memory>
 
 #include "db/dbformat.h"
 #include "util/hyperloglog.h"
