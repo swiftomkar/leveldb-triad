@@ -1024,6 +1024,11 @@ Status DBImpl::DoCompactionWork(CompactionState* compact) {
       }
       compact->current_output()->largest.DecodeFrom(key);
       compact->builder->Add(key, input->value());
+      //OMKAR
+      FileMetaData* f = compact->compaction->input(compact->compaction->level(), 0);
+      f->updateFileMetaData(key);
+      //OMKAR
+
 
       // Close output file if it is big enough
       if (compact->builder->FileSize() >=
@@ -1034,10 +1039,6 @@ Status DBImpl::DoCompactionWork(CompactionState* compact) {
         }
       }
     }
-    //OMKAR
-    FileMetaData* f = compact->compaction->input(compact->compaction->level(), 0);
-    f->updateFileMetaData(key);
-    //OMKAR
 
     input->Next();
   }
