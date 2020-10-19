@@ -1,7 +1,10 @@
 #include <cassert>
 #include "leveldb/db.h"
 #include <iostream>
-
+//
+// WARNING!!!!
+// DO NOT RUN THIS TEST ON A LAPTOP/LOCAL COMPUTER
+//
 int main(int argc, char* argv[]) {
   std::cout<<"Welcome to Omkar's simple leveldb tester\n";
   leveldb::DB *db;
@@ -16,7 +19,9 @@ int main(int argc, char* argv[]) {
     key = std::to_string(i);
     s = db->Put(leveldb::WriteOptions(), key, value);
     s = db->Put(leveldb::WriteOptions(), key, value+".v2");
-    s = db->Get(leveldb::ReadOptions(), key, &return_value);
+    for(int j=0; j<10000; j++){
+      s = db->Get(leveldb::ReadOptions(), key, &return_value);
+    }
     //std::cout << return_value << "\n";
   }
   leveldb::Iterator* db_iter = db->NewIterator(leveldb::ReadOptions());
