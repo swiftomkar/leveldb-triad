@@ -137,7 +137,9 @@ DBImpl::DBImpl(const Options& raw_options, const std::string& dbname)
       shutting_down_(false),
       background_work_finished_signal_(&mutex_),
       mem_(nullptr),
+      hot_(nullptr),
       imm_(nullptr),
+      hotflushcount_(1),
       has_imm_(false),
       logfile_(nullptr),
       logfile_number_(0),
@@ -164,6 +166,7 @@ DBImpl::~DBImpl() {
 
   delete versions_;
   if (mem_ != nullptr) mem_->Unref();
+  if (hot_ != nullptr) hot_->Unref();
   if (imm_ != nullptr) imm_->Unref();
   delete tmp_batch_;
   delete log_;
@@ -424,6 +427,7 @@ Status DBImpl::RecoverLogFile(uint64_t log_number, bool last_log,
   WriteBatch batch;
   int compactions = 0;
   MemTable* mem = nullptr;
+  MemTable* hot = nullptr;
   while (reader.ReadRecord(&record, &scratch) && status.ok()) {
     if (record.size() < 12) {
       reporter.Corruption(record.size(),
@@ -436,7 +440,11 @@ Status DBImpl::RecoverLogFile(uint64_t log_number, bool last_log,
       mem = new MemTable(internal_comparator_);
       mem->Ref();
     }
-    status = WriteBatchInternal::InsertInto(&batch, mem);
+    if (hot == nullptr) {
+      hot = new MemTable(internal_comparator_);
+      hot->Ref();
+    }
+    status = WriteBatchInternal::InsertInto(&batch, mem, hot);
     MaybeIgnoreError(&status);
     if (!status.ok()) {
       break;
@@ -447,7 +455,7 @@ Status DBImpl::RecoverLogFile(uint64_t log_number, bool last_log,
       *max_sequence = last_seq;
     }
 
-    if (mem->ApproximateMemoryUsage() > options_.write_buffer_size) {
+    if (mem->ApproximateMemoryUsage() + hot->ApproximateMemoryUsage() > options_.write_buffer_size) {
       compactions++;
       *save_manifest = true;
       status = WriteLevel0Table(mem, edit, nullptr);
@@ -492,6 +500,14 @@ Status DBImpl::RecoverLogFile(uint64_t log_number, bool last_log,
       status = WriteLevel0Table(mem, edit, nullptr);
     }
     mem->Unref();
+  }
+  if (hot != nullptr) {
+    // mem did not get reused; compact it.
+    if (status.ok()) {
+      *save_manifest = true;
+      status = WriteLevel0Table(hot, edit, nullptr);
+    }
+    hot->Unref();
   }
 
   return status;
@@ -1112,6 +1128,10 @@ Iterator* DBImpl::NewInternalIterator(const ReadOptions& options,
 
   // Collect together all needed child iterators
   std::vector<Iterator*> list;
+  if (hot_ != nullptr) {
+    list.push_back(hot_->NewIterator());
+    hot_->Ref();
+  }
   list.push_back(mem_->NewIterator());
   mem_->Ref();
   if (imm_ != nullptr) {
@@ -1155,9 +1175,11 @@ Status DBImpl::Get(const ReadOptions& options, const Slice& key,
   }
 
   MemTable* mem = mem_;
+  MemTable* hot = hot_;
   MemTable* imm = imm_;
   Version* current = versions_->current();
   mem->Ref();
+  if (hot != nullptr) hot->Ref();
   if (imm != nullptr) imm->Ref();
   current->Ref();
 
@@ -1169,7 +1191,9 @@ Status DBImpl::Get(const ReadOptions& options, const Slice& key,
     mutex_.Unlock();
     // First look in the memtable, then in the immutable memtable (if any).
     LookupKey lkey(key, snapshot);
-    if (mem->Get(lkey, value, &s)) {
+    if (hot != nullptr && hot->Get(lkey, value, &s)) {
+      // Done
+    } else if (mem->Get(lkey, value, &s)) {
       // Done
     } else if (imm != nullptr && imm->Get(lkey, value, &s)) {
       // Done
@@ -1184,6 +1208,7 @@ Status DBImpl::Get(const ReadOptions& options, const Slice& key,
     MaybeScheduleCompaction();
   }
   mem->Unref();
+  if (hot != nullptr) hot->Unref();
   if (imm != nullptr) imm->Unref();
   current->Unref();
   return s;
@@ -1248,6 +1273,7 @@ Status DBImpl::Write(const WriteOptions& options, WriteBatch* updates) {
   Writer* last_writer = &w;
   if (status.ok() && updates != nullptr) {  // nullptr batch is for compactions
     WriteBatch* write_batch = BuildBatchGroup(&last_writer);
+    //WriteBatch* write_batch = updates;
     WriteBatchInternal::SetSequence(write_batch, last_sequence + 1);
     last_sequence += WriteBatchInternal::Count(write_batch);
 
@@ -1266,7 +1292,7 @@ Status DBImpl::Write(const WriteOptions& options, WriteBatch* updates) {
         }
       }
       if (status.ok()) {
-        status = WriteBatchInternal::InsertInto(write_batch, mem_);
+        status = WriteBatchInternal::InsertInto(write_batch, mem_, hot_);
       }
       mutex_.Lock();
       if (sync_error) {
@@ -1405,7 +1431,15 @@ Status DBImpl::MakeRoomForWrite(bool force) {
       log_ = new log::Writer(lfile);
       imm_ = mem_;
       has_imm_.store(true, std::memory_order_release);
-      mem_ = new MemTable(internal_comparator_);
+      if (hotflushcount_++ % flushfreq_ == 0){
+        hotflushcount_ = 1;
+        mem_ = hot_;
+        hot_ = new MemTable(internal_comparator_);
+        hot_->Ref();
+      }else{
+        mem_ = new MemTable(internal_comparator_);
+      }
+      
       mem_->Ref();
       force = false;  // Do not force another compaction if have room
       MaybeScheduleCompaction();
@@ -1460,6 +1494,9 @@ bool DBImpl::GetProperty(const Slice& property, std::string* value) {
     return true;
   } else if (in == "approximate-memory-usage") {
     size_t total_usage = options_.block_cache->TotalCharge();
+    if (hot_) {
+      total_usage += hot_->ApproximateMemoryUsage();
+    }
     if (mem_) {
       total_usage += mem_->ApproximateMemoryUsage();
     }
@@ -1532,6 +1569,8 @@ Status DB::Open(const Options& options, const std::string& dbname, DB** dbptr) {
       impl->log_ = new log::Writer(lfile);
       impl->mem_ = new MemTable(impl->internal_comparator_);
       impl->mem_->Ref();
+      impl->hot_ = new MemTable(impl->internal_comparator_);
+      impl->hot_->Ref();
     }
   }
   if (s.ok() && save_manifest) {

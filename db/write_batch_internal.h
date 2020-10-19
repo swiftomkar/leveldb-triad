@@ -5,11 +5,21 @@
 #ifndef STORAGE_LEVELDB_DB_WRITE_BATCH_INTERNAL_H_
 #define STORAGE_LEVELDB_DB_WRITE_BATCH_INTERNAL_H_
 
+#include <map>
+#include <vector>
+#include <algorithm>
+
 #include "db/dbformat.h"
 #include "leveldb/write_batch.h"
 
 namespace leveldb {
-
+struct SliceCompare
+{
+    int operator()(const Slice& loc1, const Slice& loc2) const
+    {
+        return loc1.compare(loc2);
+    }
+};
 class MemTable;
 
 // WriteBatchInternal provides static methods for manipulating a
@@ -36,6 +46,8 @@ class WriteBatchInternal {
   static void SetContents(WriteBatch* batch, const Slice& contents);
 
   static Status InsertInto(const WriteBatch* batch, MemTable* memtable);
+
+  static Status InsertInto(const WriteBatch* batch, MemTable* memtable, MemTable* hot);
 
   static void Append(WriteBatch* dst, const WriteBatch* src);
 };
