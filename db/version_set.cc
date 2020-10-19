@@ -6,6 +6,7 @@
 
 #include <algorithm>
 #include <cstdio>
+#include <iostream>
 
 #include "db/filename.h"
 #include "db/log_reader.h"
@@ -1082,7 +1083,16 @@ Status VersionSet::WriteSnapshot(log::Writer* log) {
     const std::vector<FileMetaData*>& files = current_->files_[level];
     for (size_t i = 0; i < files.size(); i++) {
       const FileMetaData* f = files[i];
-      edit.AddFile(level, f->number, f->file_size, f->smallest, f->largest);
+      edit.AddFile(level, f->number, f->file_size, f->smallest, f->largest,
+                   //OMKAR
+                   f->hll,
+                   f->reclaim_ratio,
+                   f->hll_add_count,
+                   f->num_sst_next_level_overlap,
+                   f->file_num_low,
+                   f->file_num_high
+                   //OMKAR
+                   );
     }
   }
 
@@ -1256,6 +1266,32 @@ Compaction* VersionSet::PickCompaction() {
     level = current_->compaction_level_;
     assert(level >= 0);
     assert(level + 1 < config::kNumLevels);
+    //OMKAR
+    if (level==0){
+      uint64_t total_keys = 0;
+      std::vector<HyperLogLog*> v;
+      if (true){
+        //current_->GetOverlappingInputs();
+        const std::vector<FileMetaData*> level_files = current_->files_[0];
+        for (auto f : level_files) {
+          total_keys += f->hll_add_count;
+          v.push_back(f->hll.get());
+        }
+      }
+      int estimated = HyperLogLog::MergedEstimate(v);
+      const double reclaim_ratio = 1 - estimated * 1.0 / total_keys;
+      //std::cout << "reclaim ratio: " << reclaim_ratio << "|  files at level: " << current_->files_[level].size() << "\n";
+
+      if(reclaim_ratio < 0.4 && current_->files_[level].size() <= 6) {
+        //std::cout << "delaying compaction\n";
+        current_->differedCompaction_ = true;
+        c = nullptr;
+        return nullptr;
+      }
+
+    }
+    //OMKAR
+
     c = new Compaction(options_, level);
 
     // Pick the first file that comes after compact_pointer_[level]
