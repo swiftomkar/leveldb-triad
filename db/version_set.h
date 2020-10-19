@@ -128,7 +128,8 @@ class Version {
         file_to_compact_(nullptr),
         file_to_compact_level_(-1),
         compaction_score_(-1),
-        compaction_level_(-1) {}
+        compaction_level_(-1),
+        differedCompaction_(false){}
 
   Version(const Version&) = delete;
   Version& operator=(const Version&) = delete;
@@ -162,6 +163,7 @@ class Version {
   // are initialized by Finalize().
   double compaction_score_;
   int compaction_level_;
+  bool differedCompaction_;
 };
 
 class VersionSet {
@@ -251,6 +253,9 @@ class VersionSet {
   // Returns true iff some level needs a compaction.
   bool NeedsCompaction() const {
     Version* v = current_;
+    if(v->differedCompaction_){
+      return false;
+    }
     return (v->compaction_score_ >= 1) || (v->file_to_compact_ != nullptr);
   }
 
