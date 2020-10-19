@@ -29,10 +29,10 @@ static const uint64_t maxCounter = 10000000;
 static uint64_t curCounter = 0;
 static uint64_t maxWritten = 0;
 static std::map<Slice, int, SliceCompare> hotcounter; // counter for differentiating cold and hot data
-static bool SortHotnessComparator(std::pair<Slice, int>& a, std::pair<Slice, int>& b) { 
+static bool SortHotnessComparator(std::pair<Slice, int> a, std::pair<Slice, int> b) { 
   return a.second > b.second; 
 } 
-static std::vector<std::pair<Slice, int>> HotnessSorter(std::map<Slice, int, SliceCompare> &m){
+static std::vector<std::pair<Slice, int>> HotnessSorter(std::map<Slice, int, SliceCompare> m){
     std::vector<std::pair<Slice, int>> v;
     for (auto& it : m) { 
         v.push_back(it); 
