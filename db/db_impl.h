@@ -4,7 +4,7 @@
 
 #ifndef STORAGE_LEVELDB_DB_DB_IMPL_H_
 #define STORAGE_LEVELDB_DB_DB_IMPL_H_
-
+#include "leveldb/slice.h"
 #include <atomic>
 #include <deque>
 #include <set>
@@ -175,7 +175,10 @@ class DBImpl : public DB {
   std::atomic<bool> shutting_down_;
   port::CondVar background_work_finished_signal_ GUARDED_BY(mutex_);
   MemTable* mem_;
+  MemTable* hot_;
   MemTable* imm_ GUARDED_BY(mutex_);  // Memtable being compacted
+  uint64_t hotflushcount_;
+  uint64_t flushfreq_ = 60;
   std::atomic<bool> has_imm_;         // So bg thread can detect non-null imm_
   WritableFile* logfile_;
   uint64_t logfile_number_ GUARDED_BY(mutex_);
