@@ -117,7 +117,7 @@ class VersionEdit {
     f.num_sst_next_level_overlap = num_sst_next_level_overlap;
 
     //OMKAR
-    new_files_.push_back(std::make_pair(level, f));
+    new_files_.emplace_back(level, f);
   }
 
   // Delete the specified "file" from the specified "level".
