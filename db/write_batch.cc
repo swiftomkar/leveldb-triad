@@ -38,11 +38,6 @@ static std::vector<std::pair<Slice, int>> HotnessSorter(std::map<Slice, int, Sli
         v.push_back(it); 
     }
     std::sort(v.begin(), v.end(), SortHotnessComparator);
-    int prev = -1;
-    for (auto& it : v) { 
-      assert(it.second >= prev);
-      prev = it.second;
-    } 
     return v;
 }
 
