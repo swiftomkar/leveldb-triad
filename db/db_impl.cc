@@ -2,6 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file. See the AUTHORS file for names of contributors.
 
+#include <iostream>
+
 #include "db/db_impl.h"
 
 #include <algorithm>
@@ -914,6 +916,9 @@ Status DBImpl::InstallCompactionResults(CompactionState* compact) {
     const CompactionState::Output& out = compact->outputs[i];
     //OMKAR
     const FileMetaData* f = compact->compaction->input(level, i);
+    if(!f){
+      std::cout << "segfault at " << level << "i  " << i << "out.number  " << out.number;
+    }
     //OMKAR
     compact->compaction->edit()->AddFile(level + 1, out.number, out.file_size,
                                          out.smallest, out.largest,
