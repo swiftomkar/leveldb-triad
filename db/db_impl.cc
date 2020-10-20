@@ -1086,6 +1086,7 @@ Status DBImpl::DoCompactionWork(CompactionState* compact) {
 
   mutex_.Lock();
   stats_[compact->compaction->level() + 1].Add(stats);
+  std::cout << "InstallCompactionResults";
 
   if (status.ok()) {
     status = InstallCompactionResults(compact);
