@@ -916,9 +916,7 @@ Status DBImpl::InstallCompactionResults(CompactionState* compact) {
     const CompactionState::Output& out = compact->outputs[i];
     //OMKAR
     const FileMetaData* f = compact->compaction->input(level, i);
-    if(!f){
-      std::cout << "segfault at " << level << "i  " << i << "out.number  " << out.number;
-    }
+    std::cout << "segfault at " << level << "i  " << i << "out.number  " << out.number;
     //OMKAR
     compact->compaction->edit()->AddFile(level + 1, out.number, out.file_size,
                                          out.smallest, out.largest,
