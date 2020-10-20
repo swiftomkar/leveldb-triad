@@ -913,7 +913,7 @@ Status DBImpl::InstallCompactionResults(CompactionState* compact) {
   for (size_t i = 0; i < compact->outputs.size(); i++) {
     const CompactionState::Output& out = compact->outputs[i];
     //OMKAR
-    FileMetaData* f = compact->compaction->input(level, i);
+    const FileMetaData* f = compact->compaction->input(level, i);
     //OMKAR
     compact->compaction->edit()->AddFile(level + 1, out.number, out.file_size,
                                          out.smallest, out.largest,
