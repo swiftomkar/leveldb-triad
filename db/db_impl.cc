@@ -1056,8 +1056,8 @@ Status DBImpl::DoCompactionWork(CompactionState* compact) {
       }
     }
     //OMKAR
-    FileMetaData* f = compact->compaction->input(compact->compaction->level(), 0);
-    f->updateFileMetaData(key);
+    //FileMetaData* f = compact->compaction->input(compact->compaction->level(), 0);
+    //f->updateFileMetaData(key);
     //OMKAR
 
     input->Next();
