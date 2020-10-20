@@ -903,7 +903,6 @@ Status DBImpl::FinishCompactionOutputFile(CompactionState* compact,
 }
 
 Status DBImpl::InstallCompactionResults(CompactionState* compact) {
-  std::cout << "InstallCompactionResults";
 
   mutex_.AssertHeld();
   Log(options_.info_log, "Compacted %d@%d + %d@%d files => %lld bytes",
@@ -917,7 +916,7 @@ Status DBImpl::InstallCompactionResults(CompactionState* compact) {
   for (size_t i = 0; i < compact->outputs.size(); i++) {
     const CompactionState::Output& out = compact->outputs[i];
     //OMKAR
-    const FileMetaData* f = compact->compaction->input(level, i);
+    const FileMetaData* f = compact->compaction->input(level, out.number);
     //OMKAR
     compact->compaction->edit()->AddFile(level + 1, out.number, out.file_size,
                                          out.smallest, out.largest,
@@ -1086,7 +1085,6 @@ Status DBImpl::DoCompactionWork(CompactionState* compact) {
 
   mutex_.Lock();
   stats_[compact->compaction->level() + 1].Add(stats);
-  std::cout << "InstallCompactionResults";
 
   if (status.ok()) {
     status = InstallCompactionResults(compact);
