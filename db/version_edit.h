@@ -45,7 +45,7 @@ struct FileMetaData {
   uint64_t file_num_low;
   uint64_t file_num_high;
   int num_sst_next_level_overlap;
-  //TODO: Check back if UpdateBoundaries needs to be added
+
   void updateFileMetaData(const Slice& key){
     const Slice& user_key = ExtractUserKey(key);
     int64_t hash = MurmurHash64A(user_key.data(), user_key.size(), 0);
@@ -92,13 +92,13 @@ class VersionEdit {
   void AddFile(int level, uint64_t file, uint64_t file_size,
                const InternalKey& smallest, const InternalKey& largest,
                //OMKAR
-               const std::shared_ptr<HyperLogLog>& hll,
-               double reclaim_ratio,
-               int hll_add_count,
+               const std::shared_ptr<HyperLogLog>& hll=NULL,
+               double reclaim_ratio=0,
+               int hll_add_count=0,
 
-               int num_sst_next_level_overlap,
-               uint64_t file_num_low,
-               uint64_t file_num_high
+               int num_sst_next_level_overlap=0,
+               uint64_t file_num_low=0,
+               uint64_t file_num_high=0
                //OMKAR
                ) {
     FileMetaData f;
