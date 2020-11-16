@@ -1270,19 +1270,18 @@ Compaction* VersionSet::PickCompaction() {
     if (level==0){
       uint64_t total_keys = 0;
       std::vector<HyperLogLog*> v;
-      if (true){
-        //current_->GetOverlappingInputs();
-        const std::vector<FileMetaData*> level_files = current_->files_[0];
-        for (auto f : level_files) {
-          total_keys += f->hll_add_count;
-          v.push_back(f->hll.get());
-        }
+      //current_->GetOverlappingInputs();
+      const std::vector<FileMetaData*> level_files = current_->files_[0];
+      for (auto f : level_files) {
+        total_keys += f->hll_add_count;
+        v.push_back(f->hll.get());
       }
       int estimated = HyperLogLog::MergedEstimate(v);
       const double reclaim_ratio = 1 - estimated * 1.0 / total_keys;
       //std::cout << "reclaim ratio: " << reclaim_ratio << "|  files at level: " << current_->files_[level].size() << "\n";
 
       if(reclaim_ratio < 0.4 && current_->files_[level].size() <= 6) {
+        //No more hardcoding of values for reclaim_ratio
         //std::cout << "delaying compaction\n";
         current_->differedCompaction_ = true;
         c = nullptr;
