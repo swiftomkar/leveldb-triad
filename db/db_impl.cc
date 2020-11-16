@@ -548,9 +548,8 @@ Status DBImpl::WriteLevel0Table(MemTable* mem, VersionEdit* edit,
     if (base != nullptr) {
       level = base->PickLevelForMemTableOutput(min_user_key, max_user_key);
     }
-    edit->AddFile(level, meta.number, meta.file_size, meta.smallest,
+    edit->AddFile(level, meta.number, meta.file_size, meta.smallest, meta.largest,
                   //OMKAR
-                  meta.largest,
                   meta.hll,
                   meta.reclaim_ratio,
                   meta.hll_add_count,
@@ -919,14 +918,14 @@ Status DBImpl::InstallCompactionResults(CompactionState* compact) {
     FileMetaData* f = compact->compaction->input(0, 0);
     //OMKAR
     compact->compaction->edit()->AddFile(level + 1, out.number, out.file_size,
-                                         out.smallest, out.largest,
+                                         out.smallest, out.largest);//,
                                          //OMKAR
-                                         f->hll,
-                                         f->reclaim_ratio,
-                                         f->hll_add_count,
-                                         f->num_sst_next_level_overlap,
-                                         f->file_num_low,
-                                         f->file_num_high);
+                                         //f->hll,
+                                         //f->reclaim_ratio,
+                                         //f->hll_add_count,
+                                         //f->num_sst_next_level_overlap,
+                                         //f->file_num_low,
+                                         //f->file_num_high);
                                          //OMKAR
   }
   return versions_->LogAndApply(compact->compaction->edit(), &mutex_);
@@ -1043,6 +1042,7 @@ Status DBImpl::DoCompactionWork(CompactionState* compact) {
       compact->current_output()->largest.DecodeFrom(key);
       compact->builder->Add(key, input->value());
       //OMKAR
+      //TODO: Big issue is probably here
       //FileMetaData* f = compact->compaction->input(compact->compaction->level(), 0);
       FileMetaData* f = compact->compaction->input(0, 0);
       f->updateFileMetaData(key);

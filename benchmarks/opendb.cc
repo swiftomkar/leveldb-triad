@@ -13,7 +13,7 @@ int main(int argc, char* argv[]) {
   leveldb::Status status = leveldb::DB::Open(options, "/tmp/testdb", &db);
   std::string value, key, return_value;
   leveldb::Status s;
-  for(int i = 0; i<200000;i++) {
+  for(int i = 0; i<5000000;i++) {
     value = "value" + std::to_string(i);
     std::string ret_value;
     key = std::to_string(i);
