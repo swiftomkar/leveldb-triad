@@ -918,9 +918,9 @@ Status DBImpl::InstallCompactionResults(CompactionState* compact) {
     FileMetaData* f = compact->compaction->input(0, 0);
     //OMKAR
     compact->compaction->edit()->AddFile(level + 1, out.number, out.file_size,
-                                         out.smallest, out.largest);//,
+                                         out.smallest, out.largest,
                                          //OMKAR
-                                         //f->hll,
+                                         f->hll);//,
                                          //f->reclaim_ratio,
                                          //f->hll_add_count,
                                          //f->num_sst_next_level_overlap,
