@@ -9,9 +9,9 @@
 #include <cstdint>
 
 namespace leveldb {
-class WorkkloadType{
+class WorkloadType{
  public:
-  WorkkloadType();
+  WorkloadType() = default;
 
   void getCountInc();
 

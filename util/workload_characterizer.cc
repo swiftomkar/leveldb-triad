@@ -4,11 +4,8 @@
 #include "util/workload_characterizer.h"
 
 namespace leveldb{
-WorkkloadType::WorkkloadType() {
-  skew = 0.0;
-}
 
-void WorkkloadType::getCountInc() {
+void WorkloadType::getCountInc() {
   if (windowCount == 10000){
     windowCount = 0;
     getCount = 0;
@@ -18,7 +15,7 @@ void WorkkloadType::getCountInc() {
   readWriteRatio = getCount/putCount;
 }
 
-void WorkkloadType::putCountInc() {
+void WorkloadType::putCountInc() {
   if (windowCount == 10000){
     windowCount = 0;
     putCount = 0;
@@ -28,7 +25,7 @@ void WorkkloadType::putCountInc() {
   readWriteRatio = getCount/putCount;
 }
 
-double WorkkloadType::getOverlapRatio() {
+double WorkloadType::getOverlapRatio() {
   if(readWriteRatio == 0){
     return 0.0;
   }
