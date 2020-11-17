@@ -1281,7 +1281,7 @@ Compaction* VersionSet::PickCompaction() {
       const double reclaim_ratio = 1 - estimated * 1.0 / total_keys;
       //std::cout << "reclaim ratio: " << reclaim_ratio << "|  files at level: " << current_->files_[level].size() << "\n";
       double overlapRatio = WorkloadType::getOverlapRatio();
-      WorkloadType::getWorkloadstat();
+      //WorkloadType::getWorkloadstat();
       //std::cout << "overlap ratio: " << overlapRatio << "\n";
       if(reclaim_ratio < overlapRatio && current_->files_[level].size() <= 6) {
         //No more hardcoding of values for reclaim_ratio
