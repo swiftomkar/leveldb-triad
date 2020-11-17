@@ -4,6 +4,18 @@
 #include "util/workload_characterizer.h"
 
 namespace leveldb{
+double WorkloadType::readWriteRatio = 1.0;
+int WorkloadType::windowCount = 0;
+double WorkloadType::getCount= 1.0;
+double WorkloadType::putCount = 1.0;
+
+//WorkloadType::WorkloadType() {
+//  //skew = 0.0;
+//  readWriteRatio = 0.0;
+//  getCount = 0.0;
+//  putCount = 0.0;
+//  windowCount = 0;
+//}
 
 void WorkloadType::getCountInc() {
   if (windowCount == 10000){
@@ -12,7 +24,6 @@ void WorkloadType::getCountInc() {
   }
   windowCount++;
   getCount++;
-  readWriteRatio = getCount/putCount;
 }
 
 void WorkloadType::putCountInc() {
@@ -22,10 +33,19 @@ void WorkloadType::putCountInc() {
   }
   windowCount++;
   putCount++;
-  readWriteRatio = getCount/putCount;
+}
+
+void WorkloadType::getWorkloadstat() {
+  std::cout <<"------------------------" << "\n";
+  std::cout <<"window count: " << windowCount << "\n";
+  std::cout <<"get count: " << getCount << "\n";
+  std::cout <<"put count: " << putCount << "\n";
+  std::cout <<"ratio: " << readWriteRatio << "\n";
+  std::cout <<"------------------------" << "\n";
 }
 
 double WorkloadType::getOverlapRatio() {
+  readWriteRatio = getCount/putCount;
   if(readWriteRatio == 0){
     return 0.0;
   }

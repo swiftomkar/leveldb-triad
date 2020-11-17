@@ -5,28 +5,31 @@
 #ifndef LEVELDB_WORKLOAD_CHARACTERIZER_H
 #define LEVELDB_WORKLOAD_CHARACTERIZER_H
 
+#include <iostream>
 #include <cstddef>
 #include <cstdint>
 
 namespace leveldb {
+
 class WorkloadType{
+
  public:
-  WorkloadType() = default;
+  WorkloadType()=default;
 
-  void getCountInc();
+  static void getCountInc();
 
-  void putCountInc();
+  static void putCountInc();
 
-  double getOverlapRatio();
+  static double getOverlapRatio();
+
+  static void getWorkloadstat();
 
  private:
-  double skew;
-  double readWriteRatio;
-  int windowCount;
-  double getCount;
-  double putCount;
-
-
+  //double skew;
+  static double readWriteRatio;
+  static int windowCount;
+  static double getCount;
+  static double putCount;
 };
 }
 #endif  // LEVELDB_WORKLOAD_CHARACTERIZER_H
