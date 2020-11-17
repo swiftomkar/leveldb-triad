@@ -13,8 +13,19 @@ class WorkkloadType{
  public:
   WorkkloadType();
 
+  void getCountInc();
+
+  void putCountInc();
+
+  double getOverlapRatio();
+
  private:
   double skew;
+  double readWriteRatio;
+  int windowCount;
+  double getCount;
+  double putCount;
+
 
 };
 }
