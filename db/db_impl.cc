@@ -37,6 +37,8 @@
 #include "util/logging.h"
 #include "util/mutexlock.h"
 
+#include "util/workload_characterizer.h"
+
 namespace leveldb {
 
 const int kNumNonTableCacheFiles = 10;
@@ -916,11 +918,12 @@ Status DBImpl::InstallCompactionResults(CompactionState* compact) {
     const CompactionState::Output& out = compact->outputs[i];
     //OMKAR
     FileMetaData* f = compact->compaction->input(0, 0);
+    //std::cout<<"hll vector:" << f->hll << std::endl;
     //OMKAR
     compact->compaction->edit()->AddFile(level + 1, out.number, out.file_size,
-                                         out.smallest, out.largest);//,
+                                         out.smallest, out.largest,
                                          //OMKAR
-                                         //f->hll,
+                                         f->hll);//,
                                          //f->reclaim_ratio,
                                          //f->hll_add_count,
                                          //f->num_sst_next_level_overlap,
@@ -1184,6 +1187,10 @@ Status DBImpl::Get(const ReadOptions& options, const Slice& key,
   if (hot != nullptr) hot->Ref();
   if (imm != nullptr) imm->Ref();
   current->Ref();
+  //OMKAR
+  WorkloadType::getCountInc();
+  // workloadType.getWorkloadstat();
+  //OMKAR
 
   bool have_stat_update = false;
   Version::GetStats stats;
@@ -1278,6 +1285,8 @@ Status DBImpl::Write(const WriteOptions& options, WriteBatch* updates) {
     //WriteBatch* write_batch = updates;
     WriteBatchInternal::SetSequence(write_batch, last_sequence + 1);
     last_sequence += WriteBatchInternal::Count(write_batch);
+
+    WorkloadType::putCountInc();
 
     // Add to log and apply to memtable.  We can release the lock
     // during this phase since &w is currently responsible for logging
@@ -1538,6 +1547,7 @@ void DBImpl::GetApproximateSizes(const Range* range, int n, uint64_t* sizes) {
 Status DB::Put(const WriteOptions& opt, const Slice& key, const Slice& value) {
   WriteBatch batch;
   batch.Put(key, value);
+  //WorkloadType::putCountInc();
   return Write(opt, &batch);
 }
 

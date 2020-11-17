@@ -20,6 +20,7 @@
 #include "util/coding.h"
 #include "util/logging.h"
 
+#include "util/workload_characterizer.h"
 namespace leveldb {
 
 static size_t TargetFileSize(const Options* options) {
@@ -1279,8 +1280,10 @@ Compaction* VersionSet::PickCompaction() {
       int estimated = HyperLogLog::MergedEstimate(v);
       const double reclaim_ratio = 1 - estimated * 1.0 / total_keys;
       //std::cout << "reclaim ratio: " << reclaim_ratio << "|  files at level: " << current_->files_[level].size() << "\n";
-
-      if(reclaim_ratio < 0.4 && current_->files_[level].size() <= 6) {
+      double overlapRatio = WorkloadType::getOverlapRatio();
+      WorkloadType::getWorkloadstat();
+      //std::cout << "overlap ratio: " << overlapRatio << "\n";
+      if(reclaim_ratio < overlapRatio && current_->files_[level].size() <= 6) {
         //No more hardcoding of values for reclaim_ratio
         //std::cout << "delaying compaction\n";
         current_->differedCompaction_ = true;
