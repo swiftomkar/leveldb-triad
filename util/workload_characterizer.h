@@ -10,8 +10,11 @@
 
 namespace leveldb {
 class WorkkloadType{
+ public:
+  WorkkloadType();
+
  private:
-  int skew;
+  double skew;
 
 };
 }

@@ -4,5 +4,8 @@
 #include "util/workload_characterizer.h"
 
 namespace leveldb{
+WorkkloadType::WorkkloadType() {
+  skew = 0.0;
+}
 
 }
