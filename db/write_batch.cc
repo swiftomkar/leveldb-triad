@@ -20,19 +20,14 @@
 #include "db/write_batch_internal.h"
 #include "leveldb/db.h"
 #include "util/coding.h"
-#include "db/db_impl.h"
 
 namespace leveldb {
 
 // WriteBatch header has an 8-byte sequence number followed by a 4-byte count.
 static const size_t kHeader = 12;
-<<<<<<< Updated upstream
-=======
 static const uint64_t maxCounter = 10000000;
 static uint64_t curCounter = 0;
 static uint64_t maxWritten = 0;
-//***ziyang***//
-static int _skewedWrite = -1;
 static std::map<Slice, int, SliceCompare> hotcounter; // counter for differentiating cold and hot data
 static bool SortHotnessComparator(std::pair<Slice, int> a, std::pair<Slice, int> b) { 
   return a.second > b.second; 
@@ -43,26 +38,8 @@ static std::vector<std::pair<Slice, int>> HotnessSorter(std::map<Slice, int, Sli
         v.push_back(it); 
     }
     std::sort(v.begin(), v.end(), SortHotnessComparator);
-    uint64_t freqSum;
-    for (auto& tmp : v){
-        freqSum += tmp.second;
-    }
-    uint64_t freqAvg = freqSum / v.size();
-    uint64_t freqVar = 0;
-    for (auto& tmp : v){
-        freqVar += (tmp.second - freqAvg) * (tmp.second - freqAvg) / v.size();
-    }
-    if (freqVar > 10){
-        _skewedWrite = 1;
-    } else {
-        _skewedWrite = -1;
-    }
-    
     return v;
 }
->>>>>>> Stashed changes
-
-static int GetWriteWorkload() {return _skewedWrite; };
 
 WriteBatch::WriteBatch() { Clear(); }
 
@@ -153,15 +130,68 @@ void WriteBatch::Append(const WriteBatch& source) {
 namespace {
 class MemTableInserter : public WriteBatch::Handler {
  public:
+  //https://www.geeksforgeeks.org/sorting-a-map-by-value-in-c-stl/
+  
   SequenceNumber sequence_;
-  MemTable* mem_;
-
+  MemTable* mem_; //default mem table
+  MemTable* hot_;
+  const float hotPercentage = 0.2;
+  bool KeyIsHot(const Slice& key){
+    static bool result = false;
+    if (hot_ == nullptr){
+      return false;
+    }else{
+      curCounter++;
+      //algorithm:
+      //First calculate the average write number of each key
+      /*
+      static int avg = curCounter / hotcounter.size();
+      maxWritten = maxWritten >= hotcounter[key] ? maxWritten : hotcounter[key];
+      //then get the 3/4 quartile between the max accessed time for any key and the avg (near avg)
+      const int shouldGreaterThan = maxWritten - ((maxWritten - avg) >> 2);
+      if (hotcounter[key] >= shouldGreaterThan){
+        result = true;
+      }else{
+        result = false;
+      }*/
+      
+      std::vector<std::pair<Slice, int>> sortedHotness = HotnessSorter(hotcounter);
+      int maxCount = sortedHotness.size() >> 2;
+      int count = 0;
+      for (std::vector<std::pair<Slice, int>>::iterator it = sortedHotness.begin() ; it != sortedHotness.end(); ++it){
+        if (count >= maxCount) break;
+        if (it->first == key) {
+          result = true;
+          break;
+        }
+        count++;
+      }
+      if (curCounter == maxCounter){
+        maxWritten = 0;
+        curCounter = 0;
+        hotcounter.clear();
+      }
+      return result;
+    }
+  }
   void Put(const Slice& key, const Slice& value) override {
-    mem_->Add(sequence_, kTypeValue, key, value);
+    //https://stackoverflow.com/a/4527747/3175584
+    hotcounter[key]++;
+    if (KeyIsHot(key)){
+      hot_->Add(sequence_, kTypeValue, key, value);
+    }else{
+      mem_->Add(sequence_, kTypeValue, key, value);
+    }
     sequence_++;
+    
   }
   void Delete(const Slice& key) override {
-    mem_->Add(sequence_, kTypeDeletion, key, Slice());
+    hotcounter[key]++;
+    if (KeyIsHot(key)){
+      hot_->Add(sequence_, kTypeDeletion, key, Slice());
+    }else{
+      mem_->Add(sequence_, kTypeDeletion, key, Slice());
+    }
     sequence_++;
   }
 };
@@ -171,6 +201,14 @@ Status WriteBatchInternal::InsertInto(const WriteBatch* b, MemTable* memtable) {
   MemTableInserter inserter;
   inserter.sequence_ = WriteBatchInternal::Sequence(b);
   inserter.mem_ = memtable;
+  return b->Iterate(&inserter);
+}
+
+Status WriteBatchInternal::InsertInto(const WriteBatch* b, MemTable* memtable, MemTable* hot) {
+  MemTableInserter inserter;
+  inserter.sequence_ = WriteBatchInternal::Sequence(b);
+  inserter.mem_ = memtable;
+  inserter.hot_ = hot;
   return b->Iterate(&inserter);
 }
 
