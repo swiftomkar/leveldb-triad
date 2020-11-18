@@ -46,6 +46,7 @@ void WorkloadType::getWorkloadstat() {
 
 double WorkloadType::getOverlapRatio() {
   readWriteRatio = getCount/putCount;
+  //std::cout << "readWriteRatio: " << readWriteRatio << "\n";
   if(readWriteRatio <= 0.1){
     return 0.0;
   }
