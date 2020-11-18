@@ -26,6 +26,8 @@ namespace leveldb {
 
 // WriteBatch header has an 8-byte sequence number followed by a 4-byte count.
 static const size_t kHeader = 12;
+<<<<<<< Updated upstream
+=======
 static const uint64_t maxCounter = 10000000;
 static uint64_t curCounter = 0;
 static uint64_t maxWritten = 0;
@@ -58,6 +60,8 @@ static std::vector<std::pair<Slice, int>> HotnessSorter(std::map<Slice, int, Sli
     
     return v;
 }
+>>>>>>> Stashed changes
+
 static int GetWriteWorkload() {return _skewedWrite; };
 
 WriteBatch::WriteBatch() { Clear(); }
