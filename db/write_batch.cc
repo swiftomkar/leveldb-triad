@@ -20,11 +20,49 @@
 #include "db/write_batch_internal.h"
 #include "leveldb/db.h"
 #include "util/coding.h"
+#include "db/db_impl.h"
 
 namespace leveldb {
 
 // WriteBatch header has an 8-byte sequence number followed by a 4-byte count.
 static const size_t kHeader = 12;
+<<<<<<< Updated upstream
+=======
+static const uint64_t maxCounter = 10000000;
+static uint64_t curCounter = 0;
+static uint64_t maxWritten = 0;
+//***ziyang***//
+static int _skewedWrite = -1;
+static std::map<Slice, int, SliceCompare> hotcounter; // counter for differentiating cold and hot data
+static bool SortHotnessComparator(std::pair<Slice, int> a, std::pair<Slice, int> b) { 
+  return a.second > b.second; 
+} 
+static std::vector<std::pair<Slice, int>> HotnessSorter(std::map<Slice, int, SliceCompare> m){
+    std::vector<std::pair<Slice, int>> v;
+    for (auto& it : m) { 
+        v.push_back(it); 
+    }
+    std::sort(v.begin(), v.end(), SortHotnessComparator);
+    uint64_t freqSum;
+    for (auto& tmp : v){
+        freqSum += tmp.second;
+    }
+    uint64_t freqAvg = freqSum / v.size();
+    uint64_t freqVar = 0;
+    for (auto& tmp : v){
+        freqVar += (tmp.second - freqAvg) * (tmp.second - freqAvg) / v.size();
+    }
+    if (freqVar > 10){
+        _skewedWrite = 1;
+    } else {
+        _skewedWrite = -1;
+    }
+    
+    return v;
+}
+>>>>>>> Stashed changes
+
+static int GetWriteWorkload() {return _skewedWrite; };
 
 WriteBatch::WriteBatch() { Clear(); }
 

@@ -170,6 +170,8 @@ class DBImpl : public DB {
 
   // Lock over the persistent DB state.  Non-null iff successfully acquired.
   FileLock* db_lock_;
+    
+
 
   // State below is protected by mutex_
   port::Mutex mutex_;
