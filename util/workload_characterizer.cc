@@ -8,6 +8,7 @@ double WorkloadType::readWriteRatio = 1.0;
 int WorkloadType::windowCount = 0;
 double WorkloadType::getCount= 1.0;
 double WorkloadType::putCount = 1.0;
+int WorkloadType::_skewedWrite = -1;
 
 //WorkloadType::WorkloadType() {
 //  //skew = 0.0;
@@ -16,6 +17,14 @@ double WorkloadType::putCount = 1.0;
 //  putCount = 0.0;
 //  windowCount = 0;
 //}
+
+void WorkloadType::setWriteWorkload(int val) {
+    WorkloadType::_skewedWrite = val;
+}
+
+int WorkloadType::getWriteWorkload() {
+    return WorkloadType::_skewedWrite;
+}
 
 void WorkloadType::getCountInc() {
   if (windowCount == 10000){
@@ -51,7 +60,12 @@ double WorkloadType::getOverlapRatio() {
     return 0.0;
   }
   else{
-    return 0.4;
+      if (getWriteWorkload() > 0){
+          return 0.4;
+      } else {
+          return 0.2;
+      }
+
   }
 }
 

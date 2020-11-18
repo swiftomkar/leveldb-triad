@@ -8,7 +8,6 @@
 #include <iostream>
 #include <cstddef>
 #include <cstdint>
-
 namespace leveldb {
 
 class WorkloadType{
@@ -24,12 +23,17 @@ class WorkloadType{
 
   static void getWorkloadstat();
 
+  static int getWriteWorkload();
+
+  static void setWriteWorkload(int val);
+
  private:
   //double skew;
   static double readWriteRatio;
   static int windowCount;
   static double getCount;
   static double putCount;
+  static int _skewedWrite;
 };
 }
 #endif  // LEVELDB_WORKLOAD_CHARACTERIZER_H
