@@ -193,6 +193,8 @@ target_sources(leveldb
     "util/options.cc"
     "util/random.h"
     "util/status.cc"
+    "util/workload_characterizer.h"
+    "util/workload_characterizer.cc"
 
   # Only CMake 3.3+ supports PUBLIC sources in targets exported by "install".
   $<$<VERSION_GREATER:CMAKE_VERSION,3.2>:PUBLIC>
